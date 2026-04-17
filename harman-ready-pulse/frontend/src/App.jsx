@@ -1,10 +1,14 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import MapView from './map/MapView';
 
-function Dashboard() { return <div>Dashboard</div>; }
-function ScenarioController() { return <div>Scenario Controller</div>; }
+function Dashboard() {
+  return <div>Dashboard</div>;
+}
 
-import MapView from "./map/MapView"; 
+function ScenarioController() {
+  return <div>Scenario Controller</div>;
+}
 
 export default function App() {
   return (
@@ -12,8 +16,6 @@ export default function App() {
       <Routes>
         <Route path="/" element={<Dashboard />} />
         <Route path="/admin" element={<ScenarioController />} />
-
-        
         <Route path="/map-test" element={<MapView />} />
       </Routes>
     </BrowserRouter>
