@@ -34,7 +34,6 @@ class NotificationQueue {
   
   clear() { 
     this.messages = []; 
-    this.bytesSaved = 0;
   }
   
   get length() { return this.messages.length; }
