@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef } from "react";
 import { socket } from "../../socket";
-import { Settings, Wifi, WifiOff, Bell, Shield, ShieldAlert } from "lucide-react";
+import { Wifi, WifiOff, Bell, Shield, ShieldAlert } from "lucide-react";
 
 import NotificationList from "./NotificationList";
 import MetricsPanel from "./MetricsPanel";
@@ -62,7 +62,6 @@ export default function Dashboard() {
 
     const handleStats = (data) => {
       setStats(data || {});
-      // Sync pending count from stats if available
       if (data?.pendingCount !== undefined) {
         setQueueCount(data.pendingCount);
       }
@@ -91,36 +90,25 @@ export default function Dashboard() {
       style={{
         display: "flex",
         flexDirection: "column",
-        width: "100vw",
-        height: "100vh",
-        background: isDead ? "#0a0000" : "#080b14",
+        width: "100%",
+        height: "100%",
+        background: isDead ? "#0a0000" : "transparent",
         overflow: "hidden",
-        color: "#f3f4f6",
-        fontFamily: "Inter, system-ui, sans-serif",
         transition: "background 0.6s ease",
       }}
     >
-      {/* ── HEADER ── */}
-      <header
+      {/* ── TOP STATUS BAR ── */}
+      <div
         className="glass-dark"
         style={{
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
-          padding: "10px 24px",
-          height: "52px",
+          padding: "8px 24px",
           flexShrink: 0,
           borderBottom: `1px solid ${isDead ? "rgba(127,29,29,0.5)" : "rgba(17,24,39,0.8)"}`,
         }}
       >
-        <div className="flex items-center gap-3">
-          <div className={`w-2 h-2 rounded-full ${isDead ? "bg-red-500 shadow-[0_0_8px_#ef4444] animate-pulse" : "bg-blue-500 shadow-[0_0_8px_#3b82f6]"}`} />
-          <span className="text-sm font-semibold tracking-widest uppercase text-gray-300">
-            Harman Ready-Pulse
-          </span>
-        </div>
-
-        {/* Network status pill */}
         <div className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-semibold border transition-all duration-500 ${
           isDead
             ? "bg-red-950/80 border-red-800 text-red-400 animate-pulse"
@@ -130,26 +118,16 @@ export default function Dashboard() {
           {isDead ? "DEAD ZONE" : "5G CONNECTED"}
         </div>
 
-        {/* Queue banner + Preferences */}
-        <div className="flex items-center gap-3">
-          {queueCount > 0 && (
-            <div className="flex items-center gap-1.5 bg-yellow-900/40 border border-yellow-700/40 text-yellow-400 px-3 py-1.5 rounded-full text-xs font-semibold animate-fade-up">
-              <Bell className="w-3 h-3" />
-              {queueCount} pending
-            </div>
-          )}
-          <button
-            onClick={() => setIsSettingsOpen(true)}
-            className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium text-gray-500 hover:text-white border border-gray-800/50 hover:border-gray-600 hover:bg-gray-800/50 transition-all"
-          >
-            <Settings className="w-3.5 h-3.5" />
-            Preferences
-          </button>
-        </div>
-      </header>
+        {queueCount > 0 && (
+          <div className="flex items-center gap-1.5 bg-yellow-900/40 border border-yellow-700/40 text-yellow-400 px-3 py-1.5 rounded-full text-xs font-semibold animate-fade-up">
+            <Bell className="w-3 h-3" />
+            {queueCount} deferred
+          </div>
+        )}
+      </div>
 
       {/* ── MAIN CONTENT: MAP + NOTIFICATIONS ── */}
-      <div style={{ display: "flex", width: "100%", height: "calc(100vh - 52px)", overflow: "hidden" }}>
+      <div style={{ display: "flex", width: "100%", flex: 1, overflow: "hidden" }}>
 
         {/* LEFT: Map (60%) */}
         <div style={{ position: "relative", width: "60%", height: "100%", flexShrink: 0 }}>

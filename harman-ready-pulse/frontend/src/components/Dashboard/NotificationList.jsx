@@ -1,4 +1,5 @@
 import React, { useMemo } from "react";
+import { AnimatePresence } from "framer-motion";
 import NotificationItem from "./NotificationItem";
 
 export default function NotificationList({ messages }) {
@@ -15,9 +16,11 @@ export default function NotificationList({ messages }) {
 
   return (
     <div className="space-y-1">
-      {sortedMessages.map((msg, i) => (
-        <NotificationItem key={msg.id} msg={msg} index={i} />
-      ))}
+      <AnimatePresence>
+        {sortedMessages.map((msg, i) => (
+          <NotificationItem key={msg.id} msg={msg} index={i} />
+        ))}
+      </AnimatePresence>
     </div>
   );
 }

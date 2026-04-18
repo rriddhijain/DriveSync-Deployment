@@ -1,5 +1,6 @@
 import React from "react";
 import { MessageCircle, Users, Hash, Bell, Mail, Play, Camera, AlertTriangle } from "lucide-react";
+import { motion } from "framer-motion";
 
 const getAppMetadata = (appName) => {
   switch (appName) {
@@ -50,9 +51,13 @@ const NotificationItem = React.memo(({ msg, index = 0 }) => {
   // Emergency styling
   if (msg.is_emergency) {
     return (
-      <div
-        className="animate-slide-in animate-emergency p-4 rounded-xl border border-red-500 bg-red-950/50 mb-3"
-        style={{ animationDelay: `${index * 50}ms` }}
+      <motion.div
+        initial={{ opacity: 0, y: -20, scale: 0.95 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        exit={{ opacity: 0, scale: 0.9, transition: { duration: 0.2 } }}
+        transition={{ type: "spring", stiffness: 400, damping: 25 }}
+        layout
+        className="animate-emergency p-4 rounded-xl border border-red-500 bg-red-950/50 mb-3"
       >
         <div className="flex justify-between items-center mb-2">
           <div className="flex items-center gap-2">
@@ -72,7 +77,7 @@ const NotificationItem = React.memo(({ msg, index = 0 }) => {
           </div>
         </div>
         <p className="text-white font-medium text-sm">{msg.text}</p>
-      </div>
+      </motion.div>
     );
   }
 
@@ -92,9 +97,13 @@ const NotificationItem = React.memo(({ msg, index = 0 }) => {
   }
 
   return (
-    <div
-      className={`animate-slide-in p-3.5 rounded-xl border ${cardBorder} ${cardBg} ${opacityClass} mb-2.5 hover:border-gray-600/50 transition-all duration-200`}
-      style={{ animationDelay: `${index * 50}ms` }}
+    <motion.div
+      initial={{ opacity: 0, y: -20, scale: 0.95 }}
+      animate={{ opacity: 1, y: 0, scale: 1 }}
+      exit={{ opacity: 0, scale: 0.9, transition: { duration: 0.2 } }}
+      transition={{ type: "spring", stiffness: 400, damping: 25, delay: index * 0.03 }}
+      layout
+      className={`p-3.5 rounded-xl border ${cardBorder} ${cardBg} ${opacityClass} mb-2.5 hover:border-gray-600/50 transition-all duration-200`}
     >
       <div className="flex justify-between items-center mb-1.5">
         <div className="flex items-center gap-2.5">
@@ -117,7 +126,7 @@ const NotificationItem = React.memo(({ msg, index = 0 }) => {
         </div>
       </div>
       <p className={`${textClass} mt-1.5 leading-relaxed`}>{msg.text}</p>
-    </div>
+    </motion.div>
   );
 });
 
