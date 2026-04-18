@@ -32,6 +32,8 @@ export default function PreferencesPage() {
 
   const [expandedApp, setExpandedApp] = useState("whatsapp");
 
+  const [newContact, setNewContact] = useState("");
+
   const handleUpdate = (appId, field, value) => {
     setPreferences(prev => ({
       ...prev,
@@ -39,12 +41,47 @@ export default function PreferencesPage() {
     }));
   };
 
-  const handleSave = () => {
-    socket.emit("update_preferences", { ...preferences, contactPriorities });
-    // Feedback animation could go here
+  const handleAddContact = () => {
+    if (!newContact.trim()) return;
+    const name = newContact.trim();
+    const newId = name.toLowerCase().replace(/\s+/g, '-');
+    if (!contactPriorities.some(c => c.id === newId)) {
+      setContactPriorities([...contactPriorities, { id: newId, name, priority: "High (Override)" }]);
+    }
+    setNewContact("");
   };
 
   const formatTime = (hour) => `${String(hour).padStart(2, '0')}:00`;
+
+  const handleSave = () => {
+    const formattedPrefs = {};
+    
+    // Map contact priorities to a dictionary based on rank
+    // Rank 0, 1 -> Priority 1. Others -> Priority 2
+    const contactOverridesMap = {};
+    contactPriorities.forEach((contact, index) => {
+      contactOverridesMap[contact.name] = index <= 1 ? 1 : 2;
+    });
+
+    Object.keys(preferences).forEach(appId => {
+      formattedPrefs[appId] = {
+        basePriority: preferences[appId].priority,
+        timeWindow: {
+          start: formatTime(preferences[appId].timeRange[0]),
+          end: formatTime(preferences[appId].timeRange[1])
+        },
+        contactOverrides: appId === 'whatsapp' ? contactOverridesMap : {}
+      };
+    });
+
+    socket.emit("update_preferences", formattedPrefs);
+    // Optional: add a tiny visual feedback
+    const btn = document.getElementById("save-btn");
+    if(btn) {
+      btn.innerText = "Saved!";
+      setTimeout(() => btn.innerText = "Save Configuration", 2000);
+    }
+  };
 
   return (
     <div className="h-full w-full overflow-y-auto bg-[#080b14] text-white p-8">
@@ -57,6 +94,7 @@ export default function PreferencesPage() {
             <p className="text-gray-400 mt-2">Manage notification routing, allowed hours, and contact overrides.</p>
           </div>
           <button 
+            id="save-btn"
             onClick={handleSave}
             className="px-6 py-3 bg-blue-600 hover:bg-blue-500 text-white font-semibold rounded-xl shadow-[0_0_15px_rgba(37,99,235,0.4)] transition-all flex items-center gap-2"
           >
@@ -187,10 +225,16 @@ export default function PreferencesPage() {
               <div className="mt-6 flex gap-2">
                 <input 
                   type="text" 
+                  value={newContact}
+                  onChange={(e) => setNewContact(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && handleAddContact()}
                   placeholder="Add new contact..." 
                   className="flex-1 bg-gray-900 border border-gray-700 rounded-xl px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
-                <button className="bg-gray-800 hover:bg-gray-700 text-white px-6 py-3 rounded-xl border border-gray-700 transition-colors font-medium">
+                <button 
+                  onClick={handleAddContact}
+                  className="bg-gray-800 hover:bg-gray-700 text-white px-6 py-3 rounded-xl border border-gray-700 transition-colors font-medium"
+                >
                   Add
                 </button>
               </div>
