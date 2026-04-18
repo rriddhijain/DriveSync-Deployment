@@ -99,12 +99,17 @@ module.exports = (io) => {
                     }
                 } else {
                     // ── DEAD_ZONE routing ──
-                    if (isEmergency) {
-                        // ONLY emergencies break through dead zone
-                        io.emit('emergency_alert', { ...msg, is_emergency: true });
-                        console.log("🚨 Emergency Alert Broadcasted (DEAD_ZONE override)");
+                    if (isEmergency || msg.priority === 1) {
+                        // Emergencies + Priority 1 break through dead zone
+                        if (isEmergency) {
+                            io.emit('emergency_alert', { ...msg, is_emergency: true });
+                            console.log("🚨 Emergency Alert Broadcasted (DEAD_ZONE override)");
+                        } else {
+                            io.emit('receive_live_message', msg);
+                            console.log("📲 Priority-1 Delivered (DEAD_ZONE override)");
+                        }
                     } else {
-                        // Everything else (P1, P2, P3) → queue for later
+                        // P2, P3 → queue for later
                         queue.push(msg);
                         console.log(`📦 Message Deferred (P${msg.priority}). Pending: ${queue.length}`);
 
