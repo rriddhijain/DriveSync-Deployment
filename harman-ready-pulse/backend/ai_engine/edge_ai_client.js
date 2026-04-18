@@ -1,32 +1,33 @@
 // backend/ai_engine/edge_ai_client.js
 
 async function queryEdgeAI(promptText) {
-    const startTime = Date.now(); 
+    // Timeout after 5 seconds to keep the backend responsive
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 5000);
 
     try {
-const response = await fetch('http://localhost:11434/api/generate', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-        model: 'phi3', 
-        prompt: promptText,
-        stream: false,
-        options: {
-            num_predict: 100,      // BUMP THIS to 100 to prevent mid-sentence cut-offs
-            temperature: 0.1,      // LOWER THIS to 0.1 for maximum factual accuracy
-            stop: ["\n", "Summary:", "Messages:"] // ADD STOP SEQUENCES to kill the output early
-        }
-    })
-});
+        const response = await fetch('http://localhost:11434/api/generate', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                model: 'phi3', 
+                prompt: promptText,
+                stream: false,
+                options: {
+                    num_predict: 80,      // Tightened for TTS speed
+                    temperature: 0.0,     // 0.0 for absolute consistency
+                    stop: ["\n", "Summary:", "Messages:"]
+                }
+            }),
+            signal: controller.signal
+        });
 
+        clearTimeout(timeoutId);
         const data = await response.json();
-        const latency = Date.now() - startTime;
-        
-        console.log(`[Edge AI - Phi-3] Response in ${latency}ms`);
         return data.response.trim();
         
     } catch (error) {
-        console.error("[Edge AI Offline]:", error);
+        console.error("[AI Engine] Edge AI Unreachable. Falling back to passthrough.");
         return "ERROR_AI_OFFLINE";
     }
 }
