@@ -1,6 +1,5 @@
 import React, { useEffect } from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
-import { io } from 'socket.io-client';
 
 import TopNavbar from './components/Navigation/TopNavbar';
 import Dashboard from './components/Dashboard/Dashboard';
@@ -8,8 +7,8 @@ import ScenarioController from './pages/GodMode';
 import PreferencesPage from './pages/PreferencesPage';
 import MapView from './map/MapView';
 
-// ✅ Create ONE global socket connection
-const socket = io('http://localhost:3001');
+// ✅ Single shared socket — all components use this ONE connection
+import { socket } from './socket';
 
 export default function App() {
 
@@ -22,7 +21,6 @@ export default function App() {
       console.log("📡 Global Network Shift:", state);
     });
 
-    // cleanup
     return () => {
       socket.off('connect');
       socket.off('network_state_changed');
@@ -44,4 +42,4 @@ export default function App() {
       </div>
     </BrowserRouter>
   );
-}
+}
