@@ -11,7 +11,7 @@ export default function GodMode({ socket }) {
     const payload = {
       id: uuidv4(),
       app: app,
-      sender: app === 'WhatsApp' ? sender : app,
+      sender: ['WhatsApp', 'Outlook'].includes(app) ? sender : app,
       text: isEmergency
         ? (msgText.trim() || "Emergency alert from driver — immediate attention required")
         : msgText,
@@ -81,6 +81,8 @@ export default function GodMode({ socket }) {
                     <option>Google Maps</option>
                     <option>Weather</option>
                     <option>WhatsApp</option>
+                    <option>Outlook</option>
+                    <option>YouTube</option>
                   </select>
                   <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-4 text-gray-400">
                     <svg className="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/></svg>
@@ -88,7 +90,7 @@ export default function GodMode({ socket }) {
                 </div>
               </div>
 
-              {app === 'WhatsApp' && (
+              {['WhatsApp', 'Outlook'].includes(app) && (
                 <div>
                   <label className="block text-xs text-gray-400 mb-2 font-semibold uppercase tracking-widest">Sender ID</label>
                   <input

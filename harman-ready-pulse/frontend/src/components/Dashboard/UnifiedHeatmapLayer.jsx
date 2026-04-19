@@ -7,13 +7,19 @@ export default function UnifiedHeatmapLayer({ data }) {
   const map = useMap();
 
   useEffect(() => {
-    if (!data || data.length === 0) return;
+    if (!data || !Array.isArray(data)) return;
 
-    // The configuration:
-    // { 0.1: 'red', 0.4: 'orange', 0.6: 'yellow', 1.0: 'lime' }
-    // radius: 25, blur: 15, max: 1.0
-    // Feed the live array of [lat, lng, intensity] directly into this plugin
-    const heatLayer = L.heatLayer(data, {
+    // Filter out invalid heatmap coordinates
+    const safeData = data.filter(d => 
+      Array.isArray(d) && 
+      d.length >= 2 && 
+      typeof d[0] === 'number' && !isNaN(d[0]) &&
+      typeof d[1] === 'number' && !isNaN(d[1])
+    );
+
+    if (safeData.length === 0) return;
+
+    const heatLayer = L.heatLayer(safeData, {
       radius: 25,
       blur: 15,
       maxZoom: 17,
@@ -28,7 +34,7 @@ export default function UnifiedHeatmapLayer({ data }) {
 
     heatLayer.addTo(map);
 
-    return () => {
+    return () => { // Ensure removal always runs
       map.removeLayer(heatLayer);
     };
   }, [data, map]);

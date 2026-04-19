@@ -68,8 +68,8 @@ export default function Dashboard() {
     const handleSummary = (data) => {
       const text = data.text;
       
-      // Clear the main messages feed when transitioning back to 5G since we show summarize card
-      setMessages([{
+      // Prepend the summary card to the existing messages instead of clearing the feed
+      setMessages((prev) => [{
         isSummaryCard: true, 
         title: "Network Restored", 
         subtitle: `Offline for ${data.offlineDuration || "a few moments"}`, 
@@ -77,7 +77,7 @@ export default function Dashboard() {
         app: "System",
         timestamp: Date.now(),
         deferredMessages: data.messages || []
-      }]);
+      }, ...prev]);
 
       setSummary(text);
       if ("speechSynthesis" in window) {

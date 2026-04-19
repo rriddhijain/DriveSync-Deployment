@@ -189,7 +189,7 @@ export default function MapView() {
         />
 
         {/* Signal Heatmap Overlay */}
-        <UnifiedHeatmapLayer data={liveTelemetryBuffer} />
+        <UnifiedHeatmapLayer data={HEATMAP_POINTS} />
 
         {/* Route Polyline */}
         {route.length > 0 && (

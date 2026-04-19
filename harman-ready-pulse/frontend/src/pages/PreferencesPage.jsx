@@ -1,7 +1,7 @@
 import React, { useState, useContext } from "react";
 import Slider from "rc-slider";
 import "rc-slider/assets/index.css";
-import { MessageCircle, MapPin, CloudRain, ShieldAlert, ChevronDown, GripVertical } from "lucide-react";
+import { MessageCircle, MapPin, CloudRain, ShieldAlert, ChevronDown, GripVertical, Mail, MonitorPlay } from "lucide-react";
 import { motion, Reorder } from "framer-motion";
 import { socket } from "../socket";
 import { PreferencesContext } from "../context/PreferencesContext";
@@ -10,7 +10,9 @@ const APPS = [
   { id: "emergency services", name: "Emergency Services", Icon: ShieldAlert, color: "text-red-500" },
   { id: "google maps", name: "Google Maps", Icon: MapPin, color: "text-blue-500" },
   { id: "weather", name: "Weather", Icon: CloudRain, color: "text-cyan-500" },
-  { id: "whatsapp", name: "WhatsApp", Icon: MessageCircle, color: "text-green-500" }
+  { id: "whatsapp", name: "WhatsApp", Icon: MessageCircle, color: "text-green-500" },
+  { id: "outlook", name: "Outlook", Icon: Mail, color: "text-blue-400" },
+  { id: "youtube", name: "YouTube", Icon: MonitorPlay, color: "text-red-600" }
 ];
 
 export default function PreferencesPage() {
@@ -32,8 +34,10 @@ export default function PreferencesPage() {
   };
 
   const handleAddContact = () => {
-    addContact(newContact);
-    setNewContact("");
+    if (['whatsapp', 'outlook'].includes(expandedApp)) {
+      addContact(expandedApp, newContact);
+      setNewContact("");
+    }
   };
 
   const formatTime = (hour) => `${String(hour).padStart(2, '0')}:00`;
@@ -112,9 +116,9 @@ export default function PreferencesPage() {
                           <label className="block text-sm text-gray-400 mb-3 font-medium uppercase tracking-wider">Base Priority Level</label>
                           <select 
                             value={prefs.priority} 
-                            disabled={app.id !== 'whatsapp'}
+                            disabled={!['whatsapp', 'outlook'].includes(app.id)}
                             onChange={(e) => handleUpdate(app.id, 'priority', parseInt(e.target.value, 10))}
-                            className={`w-full bg-gray-900 border border-gray-700 rounded-xl p-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-white appearance-none ${app.id !== 'whatsapp' ? 'opacity-50 cursor-not-allowed' : ''}`}
+                            className={`w-full bg-gray-900 border border-gray-700 rounded-xl p-3 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-white appearance-none ${!['whatsapp', 'outlook'].includes(app.id) ? 'opacity-50 cursor-not-allowed' : ''}`}
                           >
                             <option value={1}>Priority 1: High (Immediate / Interrupt)</option>
                             <option value={2}>Priority 2: Medium (Standard Queue)</option>
@@ -122,6 +126,7 @@ export default function PreferencesPage() {
                           </select>
                         </div>
 
+                        {['whatsapp', 'outlook'].includes(app.id) && (
                         <div>
                           <div className="flex justify-between items-center mb-5">
                             <label className="block text-sm text-gray-400 font-medium uppercase tracking-wider">Active Time Window</label>
@@ -132,7 +137,7 @@ export default function PreferencesPage() {
                           <div className="px-3">
                             <Slider
                               range
-                              disabled={app.id !== 'whatsapp'}
+                              disabled={false}
                               min={0}
                               max={24}
                               value={prefs.timeRange}
@@ -146,6 +151,7 @@ export default function PreferencesPage() {
                             />
                           </div>
                         </div>
+                        )}
                       </motion.div>
                     )}
                   </div>
@@ -157,18 +163,18 @@ export default function PreferencesPage() {
           {/* Right Column: Priority Routing */}
           <div className="space-y-6">
             <h2 className="text-xl font-semibold border-b border-gray-800 pb-3">Message Priority Order</h2>
-            {expandedApp === 'whatsapp' ? (
+            {['whatsapp', 'outlook'].includes(expandedApp) ? (
               <div className="bg-gray-900/50 border border-gray-800 rounded-2xl p-6">
                 <div className="flex items-center gap-3 mb-6">
-                  <MessageCircle className="w-6 h-6 text-green-500" />
-                  <h3 className="text-lg font-medium text-white">WhatsApp Contact Priority</h3>
+                  {expandedApp === 'whatsapp' ? <MessageCircle className="w-6 h-6 text-green-500" /> : <Mail className="w-6 h-6 text-blue-400" />}
+                  <h3 className="text-lg font-medium text-white capitalize">{expandedApp} Contact Priority</h3>
                 </div>
                 <p className="text-sm text-gray-400 mb-6">
                   Drag and drop contacts to set their priority hierarchy. High priority contacts will bypass the global app rules and trigger immediate notifications.
                 </p>
 
-                <Reorder.Group axis="y" values={contactPriorities} onReorder={setContactPriorities} className="space-y-3">
-                  {contactPriorities.map((contact, index) => (
+                <Reorder.Group axis="y" values={contactPriorities[expandedApp] || []} onReorder={(newOrder) => setContactPriorities(expandedApp, newOrder)} className="space-y-3">
+                  {(contactPriorities[expandedApp] || []).map((contact, index) => (
                     <Reorder.Item 
                       key={contact.id} 
                       value={contact}
@@ -208,7 +214,7 @@ export default function PreferencesPage() {
               </div>
             ) : (
                <div className="bg-gray-900/50 border border-gray-800 rounded-2xl p-6 text-center text-gray-500">
-                Contact overrides are only available for WhatsApp. Please select WhatsApp to configure VIP contacts.
+                Contact overrides are only available for WhatsApp and Outlook. Please select one to configure VIP contacts.
                </div>
             )}
           </div>

@@ -63,9 +63,10 @@ export default function FleetHeatmap() {
           attribution='&copy; CARTO'
         />
         <UnifiedHeatmapLayer data={liveTelemetryBuffer} />
-        {liveCars.map((car, idx) => (
-           <Marker key={`car-${idx}`} position={[car[0], car[1]]} icon={ghostCarIcon} />
-        ))}
+        {liveCars.map((car, idx) => {
+          if (!Array.isArray(car) || car.length < 2 || typeof car[0] !== 'number' || isNaN(car[0]) || typeof car[1] !== 'number' || isNaN(car[1])) return null;
+          return <Marker key={`car-${idx}-${car[2]||''}`} position={[car[0], car[1]]} icon={ghostCarIcon} />;
+        })}
       </MapContainer>
     </div>
   );
