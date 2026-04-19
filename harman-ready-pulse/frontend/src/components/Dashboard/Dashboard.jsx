@@ -32,11 +32,18 @@ export default function Dashboard() {
       setMessages((prev) => [msg, ...prev]);
       if ("speechSynthesis" in window) {
         window.speechSynthesis.cancel();
-        const utterance = new SpeechSynthesisUtterance(`Emergency Alert: ${msg.text}`);
-        utterance.rate = 1.2;
-        utterance.pitch = 1.3;
-        utterance.volume = 1.0;
-        window.speechSynthesis.speak(utterance);
+        window.currentEmergencyUtterance = new SpeechSynthesisUtterance(`Emergency Alert: ${msg.text}`);
+        window.currentEmergencyUtterance.rate = 1.2;
+        window.currentEmergencyUtterance.pitch = 1.3;
+        window.currentEmergencyUtterance.volume = 1.0;
+        
+        const voices = window.speechSynthesis.getVoices();
+        const enVoice = voices.find(v => v.lang.startsWith('en') && v.name.includes('Google'));
+        if (enVoice) {
+            window.currentEmergencyUtterance.voice = enVoice;
+        }
+
+        window.speechSynthesis.speak(window.currentEmergencyUtterance);
       }
     };
 
@@ -76,25 +83,21 @@ export default function Dashboard() {
       if ("speechSynthesis" in window) {
         window.speechSynthesis.cancel();
         
-        let emergenciesText = "";
-        let summaryRaw = text;
+        let fullSpeech = text || "No summary available";
 
-        if (text.includes("SUMMARY:")) {
-          const parts = text.split("SUMMARY:");
-          emergenciesText = parts[0].replace("EMERGENCIES:", "").trim();
-          summaryRaw = "Summary: " + parts[1].trim();
+        // Chrome garbage collection workaround
+        window.currentUtterance = new SpeechSynthesisUtterance(fullSpeech);
+        window.currentUtterance.rate = 1.0; 
+        window.currentUtterance.pitch = 1.1;
+
+        // Try getting voices if available
+        const voices = window.speechSynthesis.getVoices();
+        const enVoice = voices.find(v => v.lang.startsWith('en') && v.name.includes('Google'));
+        if (enVoice) {
+            window.currentUtterance.voice = enVoice;
         }
 
-        let fullSpeech = "";
-        if (emergenciesText && emergenciesText.toLowerCase() !== "none") {
-          fullSpeech += "Priority AI Assessment, Emergencies: " + emergenciesText + ". ";
-        }
-        fullSpeech += summaryRaw;
-
-        const combinedUtterance = new SpeechSynthesisUtterance(fullSpeech);
-        combinedUtterance.rate = 1.0; 
-        combinedUtterance.pitch = 1.1;
-        window.speechSynthesis.speak(combinedUtterance);
+        window.speechSynthesis.speak(window.currentUtterance);
       }
     };
 

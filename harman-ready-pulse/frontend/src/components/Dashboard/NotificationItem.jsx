@@ -64,26 +64,21 @@ const NotificationItem = React.memo(({ msg, index = 0 }) => {
     const handleReplay = () => {
       if ("speechSynthesis" in window) {
         window.speechSynthesis.cancel();
-        
-        let emergenciesText = "";
-        let summaryRaw = msg.text;
 
-        if (msg.text.includes("SUMMARY:")) {
-          const parts = msg.text.split("SUMMARY:");
-          emergenciesText = parts[0].replace("EMERGENCIES:", "").trim();
-          summaryRaw = "Summary: " + parts[1].trim();
+        let fullSpeech = msg.text || "No summary available";
+
+        // Chrome garbage collection workaround
+        window.currentNotificationUtterance = new SpeechSynthesisUtterance(fullSpeech);
+        window.currentNotificationUtterance.rate = 1.0; 
+        window.currentNotificationUtterance.pitch = 1.1;
+
+        const voices = window.speechSynthesis.getVoices();
+        const enVoice = voices.find(v => v.lang.startsWith('en') && v.name.includes('Google'));
+        if (enVoice) {
+            window.currentNotificationUtterance.voice = enVoice;
         }
 
-        let fullSpeech = "";
-        if (emergenciesText && emergenciesText.toLowerCase() !== "none") {
-          fullSpeech += "Priority AI Assessment, Emergencies: " + emergenciesText + ". ";
-        }
-        fullSpeech += summaryRaw;
-
-        const combinedUtterance = new SpeechSynthesisUtterance(fullSpeech);
-        combinedUtterance.rate = 1.0; 
-        combinedUtterance.pitch = 1.1;
-        window.speechSynthesis.speak(combinedUtterance);
+        window.speechSynthesis.speak(window.currentNotificationUtterance);
       }
     };
 
