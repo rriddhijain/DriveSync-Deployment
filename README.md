@@ -10,6 +10,9 @@ A Human-Machine Interface (HMI) and telemetry simulation system for connected ve
 *   **GitHub Repository**: [https://github.com/rriddhijain/DriveSync-Deployment](https://github.com/rriddhijain/DriveSync-Deployment)
 *   **System Walkthrough Video**: *[Link Placeholder]*
 
+> [!NOTE]
+> The deployed Vercel application demonstrates the frontend and notification workflow. The Phi-3 message classification pipeline requires a locally running Ollama instance and is therefore available only when running the project locally.
+
 ---
 
 ## 3. Project Origin
