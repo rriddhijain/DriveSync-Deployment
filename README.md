@@ -4,6 +4,7 @@ A production-ready Human-Machine Interface (HMI) and telemetry coordination syst
 
 Mahe Mobility Challenge - First Place (AI Track)
 Built collaboratively with a team, with AI assistance. My primary contributions focused on End-to-End System Architecture, Geospatial Telemetry Integration, and Node.js routing.
+
 ---
 
 ## 2. Live Demo
