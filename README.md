@@ -271,7 +271,7 @@ Distributed under the MIT License. See `LICENSE` for more information.
 
 ## 19. Key Contributions
 
-*   **End-to-End System Architecture**: Architected the complete event-driven data pipeline and HMI state synchronization model. Designed the data flow routing logic between the React frontend HMI and Node.js microservices to manage asynchronous telemetry updates.
-*   **Geospatial Telemetry Engine**: Engineered a scalable real-time telemetry simulation coordinating 15 concurrent vehicle threads. Integrated TurfJS to execute high-performance polygon intersection checks against complex geographical dead zone boundaries, dynamically outputting crowdsourced coordinate sets.
-*   **Full-Stack Integration**: Integrated the real-time WebSocket protocol layer (Socket.io) to bridge the frontend telemetry visualization map with backend priority scoring and FIFO queuing modules, ensuring sub-100ms state updates under changing simulated network conditions.
-*   **Product Research & Domain Modeling**: Researched and modeled HMI distraction metrics, leading to the development of the dual-threshold signal hysteresis algorithm to resolve high cognitive load scenarios during intermittent connectivity.
+*   **End-to-End Architecture**: Architected an event-driven data pipeline and HMI state synchronization model, designing the routing logic between a React frontend and Node.js microservices for asynchronous telemetry updates.
+*   **Geospatial Telemetry Engine**: Engineered a real-time telemetry simulation coordinating 15 concurrent vehicle threads, integrating TurfJS for high-performance polygon intersection checks against complex geographical dead zones.
+*   **Full-Stack Integration**: Integrated Socket.io WebSockets to bridge the frontend visualization map with backend priority scoring and FIFO queues, ensuring sub-100ms state updates under variable network conditions.
+*   **Product Research & Domain Modeling**: Modeled HMI distraction metrics to develop a dual-threshold signal hysteresis algorithm, resolving high cognitive load scenarios during intermittent network connectivity.
