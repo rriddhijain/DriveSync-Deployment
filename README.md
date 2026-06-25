@@ -10,8 +10,13 @@ A Human-Machine Interface (HMI) and telemetry simulation system for connected ve
 *   **GitHub Repository**: [https://github.com/rriddhijain/DriveSync-Deployment](https://github.com/rriddhijain/DriveSync-Deployment)
 *   **System Walkthrough Video**: *[Link Placeholder]*
 
-> [!NOTE]
-> The deployed Vercel application demonstrates the frontend and notification workflow. The system has built-in local fallback classifiers (using regex keyword matching) so that the core prioritization and alarm flows function even if the AI model is offline. However, actual live AI intent classification requires a locally running Ollama instance with the Phi-3 model.
+> **Demo Note**
+>
+> The deployed Vercel application demonstrates the complete notification workflow, including prioritization, routing, and summary generation.
+>
+> To ensure the application remains functional without a locally hosted LLM, DriveSync includes rule-based fallback classifiers and summarization logic. When Ollama is unavailable, these fallback components handle notification processing.
+>
+> When running the project locally with Ollama and the Phi-3 model installed, the application uses LLM-based intent classification and summarization in place of the fallback logic.
 
 ---
 
