@@ -3,7 +3,7 @@
 A production-ready Human-Machine Interface (HMI) and telemetry coordination system for connected vehicles that dynamically triages, prioritizes, and queues notifications when passing through cellular dead zones.
 
 Mahe Mobility Challenge - First Place (AI Track)
-Built collaboratively with a team. My primary contributions focused on End-to-End System Architecture, Geospatial Telemetry Integration, and Node.js routing.
+Built collaboratively with a team, with AI assistance. My primary contributions focused on End-to-End System Architecture, Geospatial Telemetry Integration, and Node.js routing.
 ---
 
 ## 2. Live Demo
