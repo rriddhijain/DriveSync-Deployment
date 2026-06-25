@@ -6,8 +6,8 @@ A production-ready Human-Machine Interface (HMI) and telemetry coordination syst
 
 ## 2. Live Demo
 
-*   **Live Application (Frontend)**: [https://drive-sync-ybe3.vercel.app/](https://drive-sync-ybe3.vercel.app/)
-*   **GitHub Repository**: [https://github.com/rriddhijain/DriveSync](https://github.com/rriddhijain/DriveSync)
+*   **Live Application (Frontend)**: [https://drive-sync-deployment.vercel.app/](https://drive-sync-deployment.vercel.app/)
+*   **GitHub Repository**: [https://github.com/rriddhijain/DriveSync-Deployment](https://github.com/rriddhijain/DriveSync-Deployment)
 *   **System Walkthrough Video**: *[Link Placeholder]*
 
 ---
@@ -206,8 +206,8 @@ Ensure you have Python 3.10+ and a package manager installed.
 
 ```bash
 # Clone the repository
-git clone https://github.com/rriddhijain/DriveSync.git
-cd DriveSync
+git clone https://github.com/rriddhijain/DriveSync-Deployment.git
+cd DriveSync-Deployment
 
 # Create and activate Python virtual environment
 python3 -m venv venv
@@ -266,3 +266,12 @@ Distributed under the MIT License. See `LICENSE` for more information.
 *   **Zero-Dependency Testing Bridge**: Created a runtime CommonJS-to-ESM evaluation sandbox using Node's native `vm` module to execute Jest unit tests on frontend utility files, removing heavy build-tool configuration requirements.
 *   **Websocket Input Sanitization**: Secured Socket.io boundaries with strict payload validation, object schemas, and prototype pollution guards, achieving 100% immunity to server crashes from malformed payloads.
 *   **Bi-directional Preference Sync**: Built a real-time preference synchronizer using WebSocket event propagation to coordinate user configurations across all connected client displays and the backend priority scoring engine.
+
+---
+
+## 19. Key Contributions
+
+*   **End-to-End System Architecture**: Architected the complete event-driven data pipeline and HMI state synchronization model. Designed the data flow routing logic between the React frontend HMI and Node.js microservices to manage asynchronous telemetry updates.
+*   **Geospatial Telemetry Engine**: Engineered a scalable real-time telemetry simulation coordinating 15 concurrent vehicle threads. Integrated TurfJS to execute high-performance polygon intersection checks against complex geographical dead zone boundaries, dynamically outputting crowdsourced coordinate sets.
+*   **Full-Stack Integration**: Integrated the real-time WebSocket protocol layer (Socket.io) to bridge the frontend telemetry visualization map with backend priority scoring and FIFO queuing modules, ensuring sub-100ms state updates under changing simulated network conditions.
+*   **Product Research & Domain Modeling**: Researched and modeled HMI distraction metrics, leading to the development of the dual-threshold signal hysteresis algorithm to resolve high cognitive load scenarios during intermittent connectivity.
