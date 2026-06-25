@@ -1,6 +1,31 @@
 // backend/ai_engine/prompts.js
 const { queryEdgeAI } = require('./edge_ai_client');
 
+function classifyLocalFallback(messageText) {
+    if (!messageText) return "ROUTINE";
+    const text = messageText.toLowerCase();
+
+    // EMERGENCY: life-threatening, medical, accident, etc.
+    const emergencyRegex = /\b(accident|ambulance|crash|hospital|heart attack|chest pain|stroke|fire|emergency|911|police|help me)\b/;
+    if (emergencyRegex.test(text)) {
+        return "EMERGENCY";
+    }
+
+    // OOO: out of office, vacation, autoreply
+    const oooRegex = /\b(out of office|vacation|autoreply|auto-reply|annual leave)\b/;
+    if (oooRegex.test(text)) {
+        return "OOO";
+    }
+
+    // SPAM: promotions, marketing, discount, off, deal
+    const spamRegex = /\b(discount|promo|code|deal|off|sale|win|winner|free|percent off|click here|subscribe|unsubscribe|opt-out|optout|free gift)\b/;
+    if (spamRegex.test(text)) {
+        return "SPAM";
+    }
+
+    return "ROUTINE";
+}
+
 async function classifyMessageIntent(messageText) {
     const prompt = `Task: Message Classification.
 Message: "${messageText}"
@@ -15,6 +40,11 @@ Output only the single classification string without punctuation or explanation.
 Classification:`;
     
     const response = await queryEdgeAI(prompt);
+    
+    if (response === "ERROR_AI_OFFLINE") {
+        console.log("[AI Engine] Local AI is offline. Using keyword-matching fallback classifier.");
+        return classifyLocalFallback(messageText);
+    }
     
     let intent = response.toUpperCase().trim().replace(/[^A-Z]/g, '');
     

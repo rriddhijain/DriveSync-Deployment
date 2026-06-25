@@ -38,7 +38,7 @@ Connected vehicles continuously receive notifications, such as navigation update
 In-vehicle displays should minimize driver distraction. While non-essential alerts (e.g., chat messages, promotional notifications) can be delayed, critical alerts (e.g., collision warnings) must be delivered immediately regardless of connection state.
 
 ### The Solution
-DriveSync simulates an in-vehicle triage system. It queues low-priority alerts during dead zones, allows high-priority messages to bypass the queue, and uses a local language model (Phi-3) to summarize deferred notifications into a single summary card once the vehicle re-enters network coverage.
+DriveSync simulates an in-vehicle triage system. It queues low-priority alerts during dead zones, allows high-priority messages to bypass the queue, and aggregates deferred notifications into a single summary card once the vehicle re-enters network coverage, utilizing a local language model (Phi-3) to classify incoming message intents.
 
 ---
 
@@ -47,7 +47,7 @@ DriveSync simulates an in-vehicle triage system. It queues low-priority alerts d
 *   **Notification Prioritization Logic**: Evaluates incoming alerts based on the application category, user-defined VIP contacts, and active time windows.
 *   **Signal Stability Hysteresis**: Employs a dual-threshold hysteresis algorithm (fails at `< 0.6` signal strength, recovers at `> 0.8` signal strength with a 3-second hold) to prevent rapid connection state toggling at dead zone boundaries.
 *   **Vehicle Telemetry Simulator**: Updates simulated vehicle coordinates on a timer, checking whether they lie inside cellular dead zones using TurfJS polygon intersection checks.
-*   **Offline Message Summarization**: Packages deferred notifications and summarizes them into a single HMI card using a local Phi-3 LLM via Ollama upon network recovery.
+*   **Offline Message Grouping**: Aggregates deferred notifications into a single summary card upon network recovery, while using a local Phi-3 LLM via Ollama to classify incoming message intents.
 *   **Interactive Control Dashboard**: Allows manual injection of mock notifications (emergency alerts, spam, custom messages), queue flushing, and network provider toggling.
 *   **Settings Synchronization**: Keeps user notification preferences in sync between the React client and Node.js backend using WebSockets.
 
@@ -64,6 +64,39 @@ DriveSync simulates an in-vehicle triage system. It queues low-priority alerts d
 
 ## 7. System Architecture
 
+```mermaid
+flowchart TD
+    subgraph Vehicle HMI Client (React)
+        A[In-Vehicle GPS/Sensors] -->|Position Coordinates| B[Signal Strength Interpolator]
+        B -->|Signal strength < 0.6| C{Hysteresis Filter}
+        B -->|Signal strength >= 0.8| C
+        C -->|Fast Fail / Slow Recover| D[Stable Connection State]
+        D -->|Transition Event| E[Socket.io client]
+    end
+
+    subgraph Telemetry & Triage Server (Node.js)
+        E -->|State Change| F[Socket.io Namespace]
+        G[Incoming Message] --> H[Triage Protocol]
+        H -->|1. AI Intent Classification| I{Edge AI Classifier / Phi3}
+        I -->|EMERGENCY/SPAM/ROUTINE| J{Priority Engine}
+        J -->|2. VIP / Time Overrides| K[Priority Score]
+        
+        F -->|Current Network State| L{Routing Decider}
+        K -->|Priority Score| L
+        
+        L -->|5G OR Priority <= 1| M[Deliver Instantly to Screen]
+        L -->|DEAD ZONE & Priority > 1| N[Store in FIFO Queue]
+        
+        D -->|Transition to 5G| O[Auto-Flush Queue]
+        O -->|Format Queue Summary| P[Summary Card Builder]
+        P -->|Deliver to Screen| M
+    end
+    
+    subgraph Fleet Analytics Map (Leaflet)
+        Q[15 simulated vehicles] -->|Live Coordinates| R[TurfJS Deadzone Check]
+        R -->|Heat Points| S[Unified Heatmap Layer]
+    end
+```
 ### Stage Explanations
 1.  **Coordinate Simulation**: The backend updates the position of simulated vehicles. The HMI determines local signal strength by calculating the inverse-distance-weighted (IDW) average of the closest points on the heatmap.
 2.  **Hysteresis Filtering**: The calculated signal strength passes through a filter. If the signal drops below 0.6, the state changes to `DEAD_ZONE`. It only changes back to `5G` when the signal exceeds 0.8 and remains there for 3 seconds.
@@ -71,7 +104,7 @@ DriveSync simulates an in-vehicle triage system. It queues low-priority alerts d
 4.  **Intent Classification**: Incoming mock messages are classified using a local model into `EMERGENCY`, `SPAM`, `OOO`, or `ROUTINE`.
 5.  **Priority Scoring**: The preferences manager calculates a priority score (0 to 999) based on application type, active time windows, and VIP contact overrides.
 6.  **Message Routing**: If the state is `5G` or the priority score is high (0 or 1), the message is delivered immediately. Otherwise, it is appended to the FIFO queue.
-7.  **Summarization on Recovery**: Upon transitioning back to `5G`, the server sends the queued messages to the local Phi-3 model, broadcasts the summary card, and clears the queue.
+7.  **Summarization on Recovery**: Upon transitioning back to `5G`, the server aggregates the queued messages into a single summary card, broadcasts it to the client, and clears the queue.
 
 ---
 
@@ -129,7 +162,7 @@ DriveSync simulates an in-vehicle triage system. It queues low-priority alerts d
     *   System apps (e.g., Navigation, Weather) = Priority `1`.
     *   Social/Work apps (e.g., Chat, Email) = Base Priority `2` (Muted to `999` outside active hours; upgraded to `1` if sent by a VIP contact).
 5.  **Queueing**: During dead zone states, priority `0` and `1` messages are delivered immediately. Priority `2` messages are queued.
-6.  **Recovery Summarization**: When connection transitions to `5G`, the queued messages are sent to the local Phi-3 model to generate a summary paragraph.
+6.  **Recovery Summarization**: When connection transitions to `5G`, the queued messages are aggregated into a summary text block.
 7.  **HMI Output**: The frontend displays the summary card and reads it aloud using the browser's native `SpeechSynthesis` API.
 
 ---
