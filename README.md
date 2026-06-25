@@ -11,7 +11,7 @@ A Human-Machine Interface (HMI) and telemetry simulation system for connected ve
 *   **System Walkthrough Video**: *[Link Placeholder]*
 
 > [!NOTE]
-> The deployed Vercel application demonstrates the frontend and notification workflow. The Phi-3 message classification pipeline requires a locally running Ollama instance and is therefore available only when running the project locally.
+> The deployed Vercel application demonstrates the frontend and notification workflow. The system has built-in local fallback classifiers (using regex keyword matching) so that the core prioritization and alarm flows function even if the AI model is offline. However, actual live AI intent classification requires a locally running Ollama instance with the Phi-3 model.
 
 ---
 
