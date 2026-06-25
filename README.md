@@ -6,7 +6,7 @@ A production-ready Human-Machine Interface (HMI) and telemetry coordination syst
 
 ## 2. Live Demo
 
-*   **Live Application (Frontend)**: [https://drive-sync-deployment.vercel.app/](https://drive-sync-deployment.vercel.app/)
+*   **Live Application (Frontend)**: [https://drive-sync-ybe3.vercel.app/](https://drive-sync-ybe3.vercel.app/)
 *   **GitHub Repository**: [https://github.com/rriddhijain/DriveSync](https://github.com/rriddhijain/DriveSync)
 *   **System Walkthrough Video**: *[Link Placeholder]*
 
@@ -252,28 +252,13 @@ npm run dev
 
 ---
 
-## 17. Lessons Learned
-
-*   **SPA Server-Side Routing**: Single Page Applications deployed on Vercel require explicit rewrite rules (`vercel.json`) to redirect all paths back to `index.html`, otherwise direct routing or page refreshes return a 404.
-*   **Hysteresis Stabilization**: Implementing a physical "grey zone" and timer hold is critical when connecting hardware telemetry to software layers, preventing flutter at signal boundaries.
-*   **Ref Caching in React**: In React, storing instances of third-party libraries (like Leaflet map layers) in refs is essential to modify parameters dynamically without triggering expensive component rebuilds.
-
----
-
-## 18. License
+## 17. License
 
 Distributed under the MIT License. See `LICENSE` for more information.
 
 ---
 
-## 19. Contributors
-
-*   **Riddhi Jain** - Main Contributor & Deployer - [GitHub Fork](https://github.com/rriddhijain/DriveSync)
-*   **InvisibleOS** - Teammate / Original Contributor
-
----
-
-## 20. Engineering Highlights
+## 18. Engineering Highlights
 
 *   **Algorithmic HMI Triage Engine**: Engineered a priority triage protocol incorporating application defaults, temporal windows, and contact ranks, preventing driver cognitive overload in cellular dead zones.
 *   **Dual-Threshold Signal Hysteresis**: Implemented a fast-fail (threshold `0.6`) and slow-recover (threshold `0.8` with a 3-second hold) hysteresis algorithm, eliminating connection toggle jitter at cellular boundaries.
