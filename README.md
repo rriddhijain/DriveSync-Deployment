@@ -2,6 +2,8 @@
 
 A production-ready Human-Machine Interface (HMI) and telemetry coordination system for connected vehicles that dynamically triages, prioritizes, and queues notifications when passing through cellular dead zones.
 
+Mahe Mobility Challenge - First Place (AI Track)
+Built collaboratively with a team. My primary contributions focused on End-to-End System Architecture, Geospatial Telemetry Integration, and Node.js routing.
 ---
 
 ## 2. Live Demo
@@ -36,7 +38,7 @@ DriveSync resolves this by implementing a smart in-vehicle triage system. It fil
 
 ---
 
-## 5. Key Contributions
+## 5. My Contributions
 
 *   **End-to-End Architecture**: Architected an event-driven data pipeline and HMI state synchronization model, designing the routing logic between a React frontend and Node.js microservices for asynchronous telemetry updates.
 *   **Geospatial Telemetry Engine**: Engineered a real-time telemetry simulation coordinating 15 concurrent vehicle threads, integrating TurfJS for high-performance polygon intersection checks against complex geographical dead zones.
@@ -46,40 +48,6 @@ DriveSync resolves this by implementing a smart in-vehicle triage system. It fil
 ---
 
 ## 6. System Architecture
-
-```mermaid
-flowchart TD
-    subgraph Vehicle HMI Client (React)
-        A[In-Vehicle GPS/Sensors] -->|Position Coordinates| B[Signal Strength Interpolator]
-        B -->|Signal strength < 0.6| C{Hysteresis Filter}
-        B -->|Signal strength >= 0.8| C
-        C -->|Fast Fail / Slow Recover| D[Stable Connection State]
-        D -->|Transition Event| E[Socket.io client]
-    end
-
-    subgraph Telemetry & Triage Server (Node.js)
-        E -->|State Change| F[Socket.io Namespace]
-        G[Incoming Message] --> H[Triage Protocol]
-        H -->|1. AI Intent Classification| I{Edge AI Classifier}
-        I -->|EMERGENCY/SPAM/ROUTINE| J{Priority Engine}
-        J -->|2. Temporal / VIP Overrides| K[Absolute Priority Score]
-        
-        F -->|Current Network State| L{Routing Decider}
-        K -->|Priority Score| L
-        
-        L -->|5G OR Priority <= 1| M[Deliver Instantly to Screen]
-        L -->|DEAD ZONE & Priority > 1| N[Store in FIFO Queue]
-        
-        D -->|Transition to 5G| O[Auto-Flush Queue]
-        O -->|Summarize Queue Array| P[Ollama API / Phi3]
-        P -->|JSON Summary Card| M
-    end
-    
-    subgraph Fleet Analytics Map (Leaflet)
-        Q[15 simulated vehicles] -->|Live Coordinates| R[TurfJS Deadzone Check]
-        R -->|Crowdsourced Heat Points| S[Unified Heatmap Layer]
-    end
-```
 
 ### Stage Explanations
 1.  **Telemetry & Signal Interpolation**: In-vehicle sensors output coordinates. The HMI interpolates local signal strength using an inverse-distance-weighted (IDW) average of the closest geographic heatmap points.
