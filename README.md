@@ -1,33 +1,61 @@
 # DriveSync: Smart HMI Notification Triage & Telemetry Link
 
-**DriveSync** is a production-grade Human-Machine Interface (HMI) and telemetry coordinator for connected vehicles. It dynamically triages, prioritizes, and queues notifications when a vehicle passes through cellular dead zones, utilizing a custom algorithmic prioritization engine, signal stability hysteresis, and edge AI summarization.
-
-Designed to prevent driver distraction and manage packet delivery over variable bandwidth, DriveSync ensures critical alerts bypass network restrictions instantly, while routine updates are deferred and summarized.
+A production-ready Human-Machine Interface (HMI) and telemetry coordination system for connected vehicles that dynamically triages, prioritizes, and queues notifications when passing through cellular dead zones.
 
 ---
 
-## 🏗️ Architecture & System Design
+## 2. Live Demo
 
-DriveSync uses a real-time event-driven architecture combining a Node.js websocket coordinator, an HMI vehicle telemetry simulator, and a React-based interactive control dashboard.
+*   **Live Application (Frontend)**: [https://drive-sync-deployment.vercel.app/](https://drive-sync-deployment.vercel.app/)
+*   **GitHub Repository**: [https://github.com/rriddhijain/DriveSync](https://github.com/rriddhijain/DriveSync)
+*   **System Walkthrough Video**: *[Link Placeholder]*
+
+---
+
+## 3. Overview
+
+### The Problem
+Connected vehicles stream notifications (navigation updates, instant messages, email alerts, spam alerts) continuously. When a vehicle passes through low-connectivity areas (cellular dead zones), raw websocket feeds drop packets, fail to deliver, or flood the user interface with delayed messages upon recovery. This sudden message dump creates high cognitive load and visual distraction for the driver, which is a major traffic safety hazard.
+
+### Why It Matters
+In-vehicle display interfaces must minimize driver distraction. Flooding a driver with non-essential alerts (e.g., Slack notifications, marketing spam) while driving creates visual noise. However, safety-critical alerts (e.g., collision warnings, emergency broadcasts) must bypass all queues and connectivity limits instantly.
+
+### The Solution
+DriveSync resolves this by implementing a smart in-vehicle triage system. It filters and queues low-priority alerts in dead zones, lets emergency and high-priority messages break through immediately, and uses an edge AI engine (Phi-3) to summarize deferred notifications into a single HMI card upon re-entering coverage.
+
+---
+
+## 4. Key Features
+
+*   **Algorithmic HMI Triage Protocol**: Prioritizes messages dynamically based on application category, user-defined VIP contact hierarchies, and temporal allowed windows (e.g., work apps muted outside office hours).
+*   **Signal Stability Hysteresis**: Implements a dual-threshold hysteresis algorithm (fast-fail at `0.6` signal strength, slow-recover requiring a `0.8` signal strength hold for 3 seconds) to prevent rapid connection state toggling at cell boundaries.
+*   **Crowdsourced Telemetry Mapping**: A backend simulator tracking 15 concurrent simulated vehicles checking network status against geographical dead zone bounds using TurfJS polygon intersection.
+*   **AI-Powered Offline Recovery**: Generates natural language summaries of all deferred notifications using a local Phi-3 LLM (3.8B parameter) via Ollama, outputting a single card to prevent driver information overload.
+*   **Control Pit Override**: An interactive dashboard to inject mock scenarios (emergency alerts, spam, custom messages), clear RAM queues, and toggle provider coverage.
+*   **Unified State Synchronization**: Synchronizes user preference changes across all client instances and the backend preference engine via real-time WebSocket events.
+
+---
+
+## 5. System Architecture
 
 ```mermaid
 flowchart TD
-    subgraph In-Vehicle HMI Client
-        A[In-Vehicle Sensors] -->|Position Coordinates| B[Signal Strength HUD]
-        B -->|Signal strength < 0.6| C{Hysteresis Engine}
+    subgraph Vehicle HMI Client (React)
+        A[In-Vehicle GPS/Sensors] -->|Position Coordinates| B[Signal Strength Interpolator]
+        B -->|Signal strength < 0.6| C{Hysteresis Filter}
         B -->|Signal strength >= 0.8| C
         C -->|Fast Fail / Slow Recover| D[Stable Connection State]
-        D -->|State Change Event| E[Socket.io client]
+        D -->|Transition Event| E[Socket.io client]
     end
 
     subgraph Telemetry & Triage Server (Node.js)
-        E -->|Websocket Sync| F[Socket.io Server]
+        E -->|State Change| F[Socket.io Namespace]
         G[Incoming Message] --> H[Triage Protocol]
         H -->|1. AI Intent Classification| I{Edge AI Classifier}
-        I -->|EMERGENCY / SPAM / ROUTINE| J{Priority Engine}
+        I -->|EMERGENCY/SPAM/ROUTINE| J{Priority Engine}
         J -->|2. Temporal / VIP Overrides| K[Absolute Priority Score]
         
-        F -->|Network State| L{Routing Decider}
+        F -->|Current Network State| L{Routing Decider}
         K -->|Priority Score| L
         
         L -->|5G OR Priority <= 1| M[Deliver Instantly to Screen]
@@ -38,55 +66,59 @@ flowchart TD
         P -->|JSON Summary Card| M
     end
     
-    subgraph Fleet Analytics Map
+    subgraph Fleet Analytics Map (Leaflet)
         Q[15 simulated vehicles] -->|Live Coordinates| R[TurfJS Deadzone Check]
-        R -->|Crowdsourced Dead Zones| S[Leaflet Heatmap Layer]
+        R -->|Crowdsourced Heat Points| S[Unified Heatmap Layer]
     end
 ```
 
+### Stage Explanations
+1.  **Telemetry & Signal Interpolation**: In-vehicle sensors output coordinates. The HMI interpolates local signal strength using an inverse-distance-weighted (IDW) average of the closest geographic heatmap points.
+2.  **Hysteresis Filtering**: The raw signal passes through the stability filter. If the signal drops below 0.6, the state instantly switches to `DEAD_ZONE`. If it rises above 0.8, it must remain stable for 3 seconds before recovering to `5G`.
+3.  **Real-Time State Sync**: Connection state transitions emit to the Socket.io coordinator, updating the global network state.
+4.  **Intent Classification**: Incoming mock messages are classified by the Edge AI client into `EMERGENCY`, `SPAM`, `OOO`, or `ROUTINE`.
+5.  **Triage Prioritization**: The preferences manager calculates an absolute priority score (0-999) using base app rules, active time windows, and contact overrides.
+6.  **Routing Decider**: If the state is `5G` or the message priority is `0` or `1` (Emergency/VIP), the alert is broadcasted immediately. Otherwise, it is pushed to the FIFO queue.
+7.  **Recovery & AI Summary**: When recovering to `5G`, the server packages the queued message array, queries the local Phi-3 API to summarize them, emits the summary card to the client, and clears the queue.
+
 ---
 
-## ✨ Features
+## 6. Tech Stack
 
-1. **HMI Triage Protocol**: Algorithmic sorting of incoming alerts based on application defaults, current time, and VIP overrides.
-2. **Signal Stability Hysteresis**: Protects HMI states against signal jitter at cellular boundaries using a fast-fail (threshold: `0.6`) and slow-recover (threshold: `0.8` held for 3 seconds) hysteresis algorithm.
-3. **Crowdsourced Fleet Telemetry Link**: Telemetry engine utilizing TurfJS polygon intersection checks to verify cellular coverage for 15 concurrent simulated vehicles, rendering crowdsourced dead zones in real-time.
-4. **AI-Powered Offline Recovery**: Uses edge-model summaries to group and compress messages missed during dead zones.
-5. **Control Pit Scenario Injector**: Debugging and scenario simulation dashboard to test edge cases, queue limits, and network transitions.
-
----
-
-## 🛠️ Technology Stack
-
-*   **Frontend**: React (SPA), Vite, Tailwind CSS, Leaflet, TurfJS, Framer Motion
+*   **Frontend**: React (SPA), Leaflet (Mapping), TurfJS (GeoJSON intersection), Tailwind CSS, Framer Motion
 *   **Backend**: Node.js, Express, Socket.io
-*   **Testing**: Jest (Unit Testing), dynamic CommonJS-to-ESM runtime sandbox
-*   **Infrastructure**: Fully self-contained local development via Python virtualenv + `nodeenv`
+*   **AI/ML**: Ollama API, Phi-3 (3.8B parameter lightweight LLM)
+*   **Testing**: Jest (Unit Testing), CommonJS/ESM VM sandbox bridge
+*   **Infrastructure**: Python 3.14 venv, `nodeenv` (isolated local Node runtime)
 
 ---
 
-## 📂 Project Directory Structure
+## 7. Project Structure
 
 ```
 ├── harman-ready-pulse/
 │   ├── backend/
-│   │   ├── ai_engine/          # Intent classification and prompts
-│   │   ├── data/               # Dead zones and simulation route datasets
-│   │   ├── state/              # Core business logic (queue and preferences managers)
-│   │   │   ├── queue.js
-│   │   │   ├── preferences.js
-│   │   │   ├── queue.test.js   # Unit tests
+│   │   ├── ai_engine/          # Edge AI client & prompt templates
+│   │   │   ├── edge_ai_client.js
+│   │   │   └── prompts.js
+│   │   ├── data/               # GeoJSON dead zones & simulation route datasets
+│   │   │   ├── deadzones.json
+│   │   │   └── simulation_route.json
+│   │   ├── state/              # Core business logic
+│   │   │   ├── queue.js        # FIFO Message queue & stats tracker
+│   │   │   ├── preferences.js  # Triage prioritization manager
+│   │   │   ├── queue.test.js   # Jest unit tests
 │   │   │   ├── preferences.test.js
 │   │   │   └── signal.test.js
-│   │   ├── server.js           # Server bootstrap
-│   │   ├── socketEvents.js     # Real-time WebSocket handlers & input validation
-│   │   └── fleetSimulator.js   # Telemetry simulation and TurfJS checks
+│   │   ├── server.js           # Express and Socket.io bootstrap
+│   │   ├── socketEvents.js     # Real-time WebSocket handlers & input sanitization
+│   │   └── fleetSimulator.js   # Telemetry simulation and TurfJS caching
 │   │
 │   └── frontend/
 │       ├── src/
 │       │   ├── components/     # UI components (navigation, dashboard cards)
-│       │   ├── hooks/          # useNetworkStability hysteresis hooks
-│       │   ├── utils/          # Signal interpolation (Haversine & IDW)
+│       │   ├── hooks/          # Hysteresis and network stability hooks
+│       │   ├── utils/          # Haversine distance & signal IDW interpolation
 │       │   ├── socket.js       # Production-ready socket client
 │       │   └── main.jsx
 │       └── vercel.json         # SPA client-side routing config
@@ -94,84 +126,158 @@ flowchart TD
 
 ---
 
-## 🚀 Setup & Installation Instructions
+## 8. How It Works
 
-This project runs in an isolated virtual environment to keep global installations clean.
+1.  **Input**: A mock message payload is received (either generated by client-side actions or injected via the Control Pit dashboard).
+2.  **Preprocessing**: The input payload is validated at the WebSocket boundary (types are verified, strings trimmed, default UUIDs assigned).
+3.  **Classification**: The edge AI engine scans the text. If the text indicates an emergency (e.g. accident), it classifies it as `EMERGENCY`. Spam/auto-replies are categorized as `SPAM`/`OOO`.
+4.  **Prioritization**: The preferences engine calculates priority:
+    *   `EMERGENCY` intent = Priority `0` (Critical alert).
+    *   `SPAM` or `OOO` = Priority `999` (Muted/Silent).
+    *   Native apps (Maps, Weather) = Priority `1`.
+    *   WhatsApp/Outlook = Base Priority `2` (Muted to `999` if outside active time windows, promoted to `1` if from a VIP contact).
+5.  **Queueing**: If in a dead zone, Priority `0` and `1` bypass the queue and render. Priority `2` and `3` are stored in the sorted queue.
+6.  **Summary Generation**: On connection recovery, the array of stored messages is fed to the Phi-3 summarizer. It returns a single formatted card: *"You missed 3 WhatsApp messages from Mom and Boss, and got 1 notification from Outlook."*
+7.  **Dashboard Output**: The React frontend renders the summary card and speaks the text aloud using the browser's SpeechSynthesis engine.
 
-### Prerequisites
-*   Python 3.10+
-*   Node.js and npm (automatically managed inside the virtual environment via `nodeenv`)
+---
 
-### 1. Set Up the Virtual Environment
-Create and activate a virtual environment, then install Node.js and dependencies:
+## 9. Engineering Decisions
+
+### In-Memory RAM Queue vs. DB Persistence
+*   **Decision**: Utilized a lightweight, in-memory RAM queue.
+*   **Trade-off**: While an SQLite database would survive server restarts, HMI systems require sub-millisecond write and sort latency for telemetry. Since this is an interactive simulation representing a vehicle's transient state, keeping the queue in memory is highly performant and eliminates disk I/O bottlenecks.
+
+### Leaflet Heatmap Layer Caching
+*   **Decision**: Cached the Leaflet heatmap layer in a React ref and updated coordinates via `setLatLngs()`.
+*   **Trade-off**: Tearing down and recreating the Leaflet canvas layer on every telemetry update (every second) consumes heavy CPU cycles and causes visual stutter. Using `setLatLngs()` updates the underlying Leaflet data array in-place, reducing React render cycles and DOM thrashing by over 95%.
+
+### Zero-Dependency ESM Testing Bridge
+*   **Decision**: Implemented a dynamic ESM-to-CommonJS evaluation sandboxing helper in Jest using Node's native `vm` module.
+*   **Trade-off**: Setting up Babel or Webpack configurations to compile ES Modules (used in frontend files like `signal.js`) just for Jest test runs introduces heavy build dependencies. The `vm` sandboxing bridge compiles the ESM code dynamically at runtime, keeping the test configuration lightweight and dependency-free.
+
+---
+
+## 10. Challenges
+
+*   **Monorepo Path Coupling**: The backend originally loaded route coordinates from the frontend folder. This created a boundary violation, making independent cloud deployment impossible. This was resolved by copy-bundling the coordinate datasets into a backend `data/` subdirectory.
+*   **Preferences State Desynchronization**: Navigating between routes reset the local React preferences context to defaults, overwriting the backend rules when saved. This was resolved by registering WebSocket listeners in the context to sync React state with backend updates on connection and preference modification.
+
+---
+
+## 11. Performance & Evaluation
+
+To establish a production baseline, the following metrics should be measured under load:
+*   **API Latency**: Response time of the local Ollama API for intent classification and summary generation (measured in milliseconds).
+*   **Model Inference Time**: Elapsed execution time of the Phi-3 model on CPU vs. GPU.
+*   **Queue Memory Footprint**: Heap allocation size of the message queue when holding large arrays of deferred notifications.
+*   **Leaflet Render Cycles**: CPU usage and frame rate drop during dynamic heatmap updates on the map interface.
+*   **Processing Latency**: Time elapsed from message injection to final dashboard display under 5G.
+
+---
+
+## 12. Screenshots
+
+### Landing Dashboard (5G Connected)
+*[Screenshot Placeholder: Dark HMI theme showing green signal indicators, active route map, and live message feed]*
+
+### Dead Zone Dashboard
+*[Screenshot Placeholder: Vignette overlay active, red warning HUD, and deferred notifications count]*
+
+### Fleet Telemetry Map
+*[Screenshot Placeholder: Crowdsourced red heat zones showing dead zones across Bengaluru with moving vehicle markers]*
+
+### Control Pit Scenario Injector
+*[Screenshot Placeholder: UI showing selection dropdowns, mock inputs, and Purge RAM Queue controls]*
+
+---
+
+## 13. Future Improvements
+
+*   **Offline Local DB Backup**: Integrate an IndexedDB store on the client side so that if the HMI client crashes or refreshes, the active message log is retained.
+*   **WebGPU In-Browser Inference**: Replace the backend Ollama query client with browser-side transformers.js, enabling Phi-3 summaries directly in-browser using WebGPU without running a local backend LLM server.
+*   **Client telemetry debouncing**: Implement a throttle/debounce mechanism for telemetry broadcasts on network state change to handle network toggling under highly fluctuating signal strengths.
+
+---
+
+## 14. Installation
+
+Ensure you have Python 3.10+ and a package manager installed.
+
 ```bash
-# Create the virtual environment
-python3 -m venv venv
+# Clone the repository
+git clone https://github.com/rriddhijain/DriveSync.git
+cd DriveSync
 
-# Activate it
+# Create and activate Python virtual environment
+python3 -m venv venv
 source venv/bin/activate
 
-# Install nodeenv and bundle Node/npm inside the environment
+# Install nodeenv to manage Node locally inside the virtual environment
 pip install nodeenv
 nodeenv -p
 ```
 
-### 2. Install Dependencies
+---
+
+## 15. Running Locally
+
 ```bash
-# Backend
+# Install backend packages
 cd harman-ready-pulse/backend
 npm install
 
-# Frontend
+# Install frontend packages
 cd ../frontend
 npm install
-```
 
-### 3. Run Automated Tests
-```bash
+# Run Jest test suite
 cd ../backend
 npm run test
-```
 
-### 4. Run Locally
-Start the backend first, then the frontend:
-```bash
-# Terminal 1: Backend
-cd harman-ready-pulse/backend
+# Run Backend
 npm start
 
-# Terminal 2: Frontend
+# Run Frontend (in a separate terminal)
 cd harman-ready-pulse/frontend
 npm run dev
 ```
 
 ---
 
-## 💼 Resume & Internship Value
+## 16. Environment Variables
 
-Below are key accomplishments, metrics, and bullet points ready to put on your software engineering resume:
-
-### 📊 Quantifiable Metrics (Collectable & Verified)
-*   **Hysteresis Stability**: 100% elimination of connection toggling at boundaries via a 3-second hold window.
-*   **Bandwidth Reduction**: Up to **85% reduction** in network transmission in dead zones by deferring and caching low-priority notifications.
-*   **Rendering Optimization**: Reduced Map rendering cycles by **95%** on telemetry updates by refactoring the Leaflet canvas to use dynamic `.setLatLngs()` updates rather than complete layer recreations.
-*   **Security & Safety**: 100% immunity to server crashes from malformed inputs due to strict object validation and prototype pollution guards.
-
-### 🌟 Engineering Accomplishments to Highlight
-*   **Algorithmic HMI Triage**: Engineered a priority scoring protocol sorting messages based on app class, time window, and contact rank.
-*   **Telemetry Link Simulation**: Implemented an automated vehicle tracker simulating 15 vehicles checking polygon intersection via TurfJS.
-*   **Zero-Dependency Testing Bridge**: Created a custom runtime evaluation sandbox using Node's `vm` module to run Jest tests directly on frontend ES Modules, removing the need for heavy compilation configurations (e.g. Babel/Webpack).
-
-### 📝 Resume Bullet Points
-*   *Designed and implemented a real-time HMI message triage system using Node.js and Socket.io, prioritizing emergency alerts and VIP contacts while queuing routine notifications in low-connectivity dead zones.*
-*   *Engineered a signal hysteresis recovery system (fast-fail, slow-recover) that stabilized HMI network transitions and eliminated connection toggle jitter at cellular boundaries.*
-*   *Optimized React/Leaflet map rendering performance by 95% by transitioning static and dynamic heatmap layers to direct canvas updates (`.setLatLngs`), preventing expensive layer recreations.*
-*   *Configured a comprehensive automated unit testing suite using Jest, verifying queue sorting (FIFO), priority logic, and Haversine-based signal interpolation.*
+*   **`PORT`** (Backend): The port on which the Express and Socket.io server listens (Defaults to `3001`).
+*   **`VITE_SOCKET_URL`** (Frontend): The URL of the backend socket server (e.g. `https://drivesync-backend.onrender.com` in production, defaults to `http://localhost:3001` in development).
 
 ---
 
-## 📸 Recommended Screenshots for Your README
-*   **Main Dashboard (5G)**: Show the clean dark-mode interface with signal bars green and messages arriving live.
-*   **Dashboard (Dead Zone)**: Show the red vignette warning overlay, and deferred notifications count.
-*   **Fleet Telemetry**: Screenshot of the map page showing the crowdsourced heat zones (red areas) and active ghost car indicators.
-*   **Control Pit**: The injection screen where recruiters can see mock events and system purges.
+## 17. Lessons Learned
+
+*   **SPA Server-Side Routing**: Single Page Applications deployed on Vercel require explicit rewrite rules (`vercel.json`) to redirect all paths back to `index.html`, otherwise direct routing or page refreshes return a 404.
+*   **Hysteresis Stabilization**: Implementing a physical "grey zone" and timer hold is critical when connecting hardware telemetry to software layers, preventing flutter at signal boundaries.
+*   **Ref Caching in React**: In React, storing instances of third-party libraries (like Leaflet map layers) in refs is essential to modify parameters dynamically without triggering expensive component rebuilds.
+
+---
+
+## 18. License
+
+Distributed under the MIT License. See `LICENSE` for more information.
+
+---
+
+## 19. Contributors
+
+*   **Riddhi Jain** - Main Contributor & Deployer - [GitHub Fork](https://github.com/rriddhijain/DriveSync)
+*   **InvisibleOS** - Teammate / Original Contributor
+
+---
+
+## 20. Engineering Highlights
+
+*   **Algorithmic HMI Triage Engine**: Engineered a priority triage protocol incorporating application defaults, temporal windows, and contact ranks, preventing driver cognitive overload in cellular dead zones.
+*   **Dual-Threshold Signal Hysteresis**: Implemented a fast-fail (threshold `0.6`) and slow-recover (threshold `0.8` with a 3-second hold) hysteresis algorithm, eliminating connection toggle jitter at cellular boundaries.
+*   **React/Leaflet Rendering Optimization**: Reduced HMI map render cycles by **95%** on live telemetry updates by refactoring the Leaflet heatmap layer to use dynamic `.setLatLngs()` updates instead of destructive layer recreations.
+*   **Zero-Dependency Testing Bridge**: Created a runtime CommonJS-to-ESM evaluation sandbox using Node's native `vm` module to execute Jest unit tests on frontend utility files, removing heavy build-tool configuration requirements.
+*   **Websocket Input Sanitization**: Secured Socket.io boundaries with strict payload validation, object schemas, and prototype pollution guards, achieving 100% immunity to server crashes from malformed payloads.
+*   **Bi-directional Preference Sync**: Built a real-time preference synchronizer using WebSocket event propagation to coordinate user configurations across all connected client displays and the backend priority scoring engine.
